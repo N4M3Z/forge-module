@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# User config override (gitignored — user creates to configure)
+config.yaml
+
+# User inline overrides (created by user, not committed)
+skills/*/User.md
+
+# Claude Code
+.claude/

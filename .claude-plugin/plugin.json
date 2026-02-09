@@ -1,0 +1,8 @@
+{
+  "name": "forge-module",
+  "version": "0.1.0",
+  "description": "Example module. USE WHEN you need project conventions guidance.",
+  "author": { "name": "Your Name" },
+  "hooks": "./hooks/hooks.json",
+  "skills": ["./skills"]
+}

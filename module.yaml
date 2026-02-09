@@ -1,0 +1,12 @@
+name: forge-module
+version: 0.1.0
+description: Example module. USE WHEN you need project conventions guidance.
+events:
+  - SessionStart
+metadata:
+  name: [name, title]
+  description: description
+
+# External steering paths — override in config.yaml (gitignored).
+steering: []
+  # - /path/to/your/steering/directory/
