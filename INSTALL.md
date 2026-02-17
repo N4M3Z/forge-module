@@ -55,3 +55,10 @@ Claude Code loads skills natively — the SessionStart hook is for other provide
 # config.yaml
 events: []
 ```
+
+## Recommended Security Tools
+
+See [root installation guide](../../INSTALL.md#recommended-security-tools) for full setup. This module benefits from:
+
+- **shellcheck** — `brew install shellcheck` (shell script linting)
+- **[safety-net](https://github.com/kenryu42/claude-code-safety-net)** — destructive command protection
