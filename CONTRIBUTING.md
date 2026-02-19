@@ -3,8 +3,7 @@
 ## Code style
 
 - All shell scripts start with `set -euo pipefail`
-- Use `command rm`, `command cp`, `command mv` — never bare (macOS aliases add `-i`)
-- Use `builtin cd` — `cd` may be intercepted by shell plugins
+- Use `command rm`, `command cp`, `command mv` -- never bare (macOS aliases add `-i`)
 - Pass [shellcheck](https://www.shellcheck.net/) with no warnings
 - Use `if/then/fi` instead of `&&` chains under `set -e`
 
@@ -13,10 +12,12 @@
 Run tests before committing:
 
 ```bash
-bash tests/test.sh
+bash tests/test.sh      # module structure tests
+make test               # validate-module (forge-lib)
+make lint               # shellcheck
 ```
 
-Tests use a simple `assert_eq`/`assert_contains` harness with temp directory isolation. Add tests for new functionality.
+Tests use a simple `assert_eq`/`assert_contains` harness. Add tests for new functionality.
 
 ## Linting
 
@@ -32,6 +33,12 @@ git config core.hooksPath .githooks
 
 1. Create a feature branch
 2. Make changes
-3. Run `bash tests/test.sh` — all tests pass
-4. Run `shellcheck hooks/*.sh tests/*.sh` — clean
+3. Run `bash tests/test.sh` -- all tests pass
+4. Run `make lint` -- clean
 5. Open a PR with a clear description
+
+## Git conventions
+
+Conventional Commits: `type: description`. Lowercase, no trailing period, no scope.
+
+Types: `feat`, `fix`, `docs`.

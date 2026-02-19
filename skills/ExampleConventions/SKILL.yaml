@@ -1,0 +1,10 @@
+name: ExampleConventions
+description: Example project conventions. USE WHEN working with project files and need guidance on standards.
+argument-hint: "[topic or file to review]"
+providers:
+    claude:
+        enabled: true
+    gemini:
+        enabled: true
+    codex:
+        enabled: true

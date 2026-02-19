@@ -1,0 +1,37 @@
+# forge-module default configuration.
+# Override: create config.yaml (gitignored) with only the fields you want to change.
+#
+# defaults.yaml is the single source of truth for deployment config (model, tools, scope).
+# Agent frontmatter provides name, description, version. Everything else comes from here.
+
+agents:
+    ExampleAgent:
+        model: fast
+        tools: Read, Grep, Glob
+
+skills:
+    ExampleConventions:
+        scope: workspace
+
+providers:
+    claude:
+        models:
+            - claude-sonnet-4-6
+        fast: claude-sonnet-4-6
+
+    gemini:
+        models:
+            - gemini-2.0-flash
+        fast: gemini-2.0-flash
+
+    codex:
+        models:
+            - gpt-5.1-codex-mini
+        fast: gpt-5.1-codex-mini
+        reasoning_effort:
+            fast: low
+
+    opencode:
+        models:
+            - claude-sonnet-4-6
+        fast: claude-sonnet-4-6

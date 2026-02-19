@@ -1,12 +1,4 @@
 name: forge-module
-version: 0.1.0
-description: Example module. USE WHEN you need project conventions guidance.
-events:
-  - SessionStart
-metadata:
-  name: [name, title]
-  description: description
-
-# External steering paths — override in config.yaml (gitignored).
-steering: []
-  # - /path/to/your/steering/directory/
+version: 0.2.0
+description: Template module for creating forge modules -- one example agent, one example skill, multi-provider deployment via forge-lib.
+events: []

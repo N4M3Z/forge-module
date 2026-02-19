@@ -1,8 +1,8 @@
 {
-  "name": "forge-module",
-  "version": "0.1.0",
-  "description": "Example module. USE WHEN you need project conventions guidance.",
-  "author": { "name": "Your Name" },
-  "hooks": "./hooks/hooks.json",
-  "skills": ["./skills"]
+    "name": "forge-module",
+    "version": "0.2.0",
+    "description": "Template module for creating forge modules -- one example agent, one example skill, multi-provider deployment via forge-lib.",
+    "author": { "name": "Your Name" },
+    "hooks": {},
+    "skills": ["./skills"]
 }
