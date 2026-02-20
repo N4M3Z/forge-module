@@ -1,22 +1,17 @@
 # forge-module Makefile
 
-.PHONY: help install install-agents install-skills install-skills-claude install-skills-gemini install-skills-codex install-skills-opencode clean verify verify-skills verify-skills-claude verify-skills-gemini verify-skills-codex verify-skills-opencode verify-agents test lint check lib-init
-
-# Variables
-AGENTS = ExampleAgent
-SKILLS = ExampleConventions
+AGENTS   = ExampleAgent
+SKILLS   = ExampleConventions
 AGENT_SRC = agents
 SKILL_SRC = skills
-LIB_DIR = $(or $(FORGE_LIB),lib)
-SCOPE ?= workspace
-CLAUDE_SKILLS_DST ?= $(if $(filter workspace,$(SCOPE)),$(CURDIR)/.claude/skills,$(HOME)/.claude/skills)
-CODEX_SKILLS_DST ?= $(if $(filter workspace,$(SCOPE)),$(CURDIR)/.codex/skills,$(HOME)/.codex/skills)
-OPENCODE_SKILLS_DST ?= $(if $(filter workspace,$(SCOPE)),$(CURDIR)/.opencode/skills,$(HOME)/.opencode/skills)
+LIB_DIR  = $(or $(FORGE_LIB),lib)
 
-# Rust binaries from forge-lib submodule
-INSTALL_AGENTS := $(LIB_DIR)/bin/install-agents
-INSTALL_SKILLS := $(LIB_DIR)/bin/install-skills
-VALIDATE_MODULE := $(LIB_DIR)/bin/validate-module
+# Fallbacks when common.mk is not yet available (uninitialized submodule)
+INSTALL_AGENTS  ?= $(LIB_DIR)/bin/install-agents
+INSTALL_SKILLS  ?= $(LIB_DIR)/bin/install-skills
+VALIDATE_MODULE ?= $(LIB_DIR)/bin/validate-module
+
+.PHONY: help install clean verify test lint check init
 
 help:
 	@echo "forge-module management commands:"
@@ -29,171 +24,26 @@ help:
 	@echo "  make lint                   Shellcheck all scripts"
 	@echo "  make check                  Verify module structure"
 
-# Ensure forge-lib submodule is initialized
-lib-init:
+init:
 	@if [ ! -f $(LIB_DIR)/Cargo.toml ]; then \
 	  echo "Initializing forge-lib submodule..."; \
 	  git submodule update --init $(LIB_DIR); \
 	fi
 
-# Ensure forge-lib binaries are built before install targets
-$(INSTALL_AGENTS) $(INSTALL_SKILLS) $(VALIDATE_MODULE): lib-init
-	@$(MAKE) -C $(LIB_DIR) build
+ifneq ($(wildcard $(LIB_DIR)/mk/common.mk),)
+  include $(LIB_DIR)/mk/common.mk
+  include $(LIB_DIR)/mk/skills/install.mk
+  include $(LIB_DIR)/mk/skills/verify.mk
+  include $(LIB_DIR)/mk/agents/install.mk
+  include $(LIB_DIR)/mk/agents/verify.mk
+endif
 
 install: install-agents install-skills
 	@echo "Installation complete. Restart your session or reload agents/skills."
 
-install-agents: $(INSTALL_AGENTS)
-	@$(INSTALL_AGENTS) $(AGENT_SRC) --scope "$(SCOPE)"
-
-install-skills: install-skills-claude install-skills-gemini install-skills-codex install-skills-opencode
-
-install-skills-claude: $(INSTALL_SKILLS)
-	@if [ "$(SCOPE)" = "all" ]; then \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider claude --scope "$(SCOPE)" --dst "$(CURDIR)/.claude/skills"; \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider claude --scope "$(SCOPE)" --dst "$(HOME)/.claude/skills"; \
-	elif [ "$(SCOPE)" = "workspace" ]; then \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider claude --scope "$(SCOPE)" --dst "$(CURDIR)/.claude/skills"; \
-	elif [ "$(SCOPE)" = "user" ]; then \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider claude --scope "$(SCOPE)" --dst "$(HOME)/.claude/skills"; \
-	else \
-	  echo "Error: Invalid SCOPE '$(SCOPE)'. Use workspace, user, or all."; \
-	  exit 1; \
-	fi
-
-install-skills-gemini: $(INSTALL_SKILLS)
-	@if command -v gemini >/dev/null 2>&1; then \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider gemini --scope "$(SCOPE)"; \
-	else \
-	  echo "  skip gemini skill install (gemini CLI not installed)"; \
-	fi
-
-install-skills-codex: $(INSTALL_SKILLS)
-	@if [ "$(SCOPE)" = "all" ]; then \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider codex --scope "$(SCOPE)" --dst "$(CURDIR)/.codex/skills"; \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider codex --scope "$(SCOPE)" --dst "$(HOME)/.codex/skills"; \
-	elif [ "$(SCOPE)" = "workspace" ]; then \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider codex --scope "$(SCOPE)" --dst "$(CURDIR)/.codex/skills"; \
-	elif [ "$(SCOPE)" = "user" ]; then \
-	  $(INSTALL_SKILLS) $(SKILL_SRC) --provider codex --scope "$(SCOPE)" --dst "$(HOME)/.codex/skills"; \
-	else \
-	  echo "Error: Invalid SCOPE '$(SCOPE)'. Use workspace, user, or all."; \
-	  exit 1; \
-	fi
-
-install-skills-opencode:
-	@if [ "$(SCOPE)" = "all" ]; then \
-	  dsts="$(CURDIR)/.opencode/skills $(HOME)/.opencode/skills"; \
-	elif [ "$(SCOPE)" = "workspace" ]; then \
-	  dsts="$(CURDIR)/.opencode/skills"; \
-	elif [ "$(SCOPE)" = "user" ]; then \
-	  dsts="$(HOME)/.opencode/skills"; \
-	else \
-	  echo "Error: Invalid SCOPE '$(SCOPE)'. Use workspace, user, or all."; \
-	  exit 1; \
-	fi; \
-	for dst in $$dsts; do \
-	  mkdir -p "$$dst"; \
-	  for skill_dir in $(SKILL_SRC)/*/; do \
-	    skill=$$(basename "$$skill_dir"); \
-	    kebab=$$(echo "$$skill" | sed 's/\([A-Z]\)/-\1/g' | sed 's/^-//' | tr '[:upper:]' '[:lower:]'); \
-	    mkdir -p "$$dst/$$kebab"; \
-	    command cp "$$skill_dir"SKILL.md "$$dst/$$kebab/SKILL.md" 2>/dev/null || true; \
-	    command cp "$$skill_dir"SKILL.yaml "$$dst/$$kebab/SKILL.yaml" 2>/dev/null || true; \
-	  done; \
-	  echo "  installed $$(ls -d "$$dst"/*/ 2>/dev/null | wc -l | tr -d ' ') skills to $$dst"; \
-	done
-
-clean: $(INSTALL_AGENTS)
-	@$(INSTALL_AGENTS) $(AGENT_SRC) --clean
+clean: clean-agents
 
 verify: verify-skills verify-agents
-
-verify-skills: verify-skills-claude verify-skills-gemini verify-skills-codex verify-skills-opencode
-
-verify-skills-claude:
-	@missing=0; \
-	echo "Verifying Claude skills in $(CLAUDE_SKILLS_DST)..."; \
-	for s in $(SKILLS); do \
-	  if test -f "$(CLAUDE_SKILLS_DST)/$$s/SKILL.md"; then \
-	    echo "  ok $$s"; \
-	  else \
-	    echo "  missing $$s"; \
-	    missing=1; \
-	  fi; \
-	done; \
-	test $$missing -eq 0
-
-verify-skills-gemini:
-	@if command -v gemini >/dev/null 2>&1; then \
-	  echo "Verifying Gemini skills via CLI..."; \
-	  out_file=$$(mktemp); \
-	  if gemini skills list > "$$out_file" 2>&1; then \
-	    grep -E "ExampleConventions" "$$out_file" || true; \
-	  else \
-	    echo "  skip gemini skill verification (non-interactive or unauthenticated)"; \
-	  fi; \
-	  command rm -f "$$out_file"; \
-	else \
-	  echo "  skip gemini skill verification (gemini CLI not installed)"; \
-	fi
-
-verify-skills-codex:
-	@missing=0; \
-	echo "Verifying Codex skills in $(CODEX_SKILLS_DST)..."; \
-	for s in $(SKILLS); do \
-	  if test -f "$(CODEX_SKILLS_DST)/$$s/SKILL.md"; then \
-	    echo "  ok $$s"; \
-	  else \
-	    echo "  missing $$s"; \
-	    missing=1; \
-	  fi; \
-	done; \
-	test $$missing -eq 0
-
-verify-skills-opencode:
-	@missing=0; \
-	echo "Verifying OpenCode skills in $(OPENCODE_SKILLS_DST)..."; \
-	for s in example-conventions; do \
-	  if test -f "$(OPENCODE_SKILLS_DST)/$$s/SKILL.md"; then \
-	    echo "  ok $$s"; \
-	  else \
-	    echo "  missing $$s"; \
-	    missing=1; \
-	  fi; \
-	done; \
-	test $$missing -eq 0
-
-verify-agents:
-	@missing=0; \
-	for provider in claude gemini codex; do \
-	  if [ "$(SCOPE)" = "all" ]; then \
-	    dirs="$(CURDIR)/.$$provider/agents $(HOME)/.$$provider/agents"; \
-	  elif [ "$(SCOPE)" = "workspace" ]; then \
-	    dirs="$(CURDIR)/.$$provider/agents"; \
-	  elif [ "$(SCOPE)" = "user" ]; then \
-	    dirs="$(HOME)/.$$provider/agents"; \
-	  else \
-	    echo "Invalid SCOPE: $(SCOPE)"; exit 1; \
-	  fi; \
-	  for dst in $$dirs; do \
-	    echo "Verifying $$provider agents in $$dst..."; \
-	    for a in $(AGENTS); do \
-	      if test -f "$$dst/$$a.md"; then \
-	        echo "  ok $$a"; \
-	      elif test -f "$$dst/$$a.toml"; then \
-	        echo "  ok $$a"; \
-	      else \
-	        echo "  missing $$a"; \
-	        missing=1; \
-	      fi; \
-	    done; \
-	  done; \
-	done; \
-	if [ $$missing -ne 0 ]; then \
-	  echo "Run 'make install' to deploy agents."; \
-	fi; \
-	test $$missing -eq 0
 
 test: $(VALIDATE_MODULE)
 	@$(VALIDATE_MODULE) $(CURDIR)
