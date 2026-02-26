@@ -1,7 +1,5 @@
 # forge-module Makefile
 
-AGENTS   = ExampleAgent
-SKILLS   = ExampleConventions
 AGENT_SRC = agents
 SKILL_SRC = skills
 LIB_DIR  = $(or $(FORGE_LIB),lib)

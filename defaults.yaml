@@ -10,8 +10,15 @@ agents:
         tools: Read, Grep, Glob
 
 skills:
-    ExampleConventions:
-        scope: workspace
+    claude:
+        ExampleConventions:
+            scope: workspace
+
+    gemini:
+        ExampleConventions:
+
+    codex:
+        ExampleConventions:
 
 providers:
     claude:
